@@ -16,6 +16,10 @@
 char *shellname = "myshell";
 char *terminator = ">";
 
+char *newnames[10];
+char *oldnames[10];
+int numofnewnames;
+char *listnames[10];
 /*
   Function Declarations for builtin shell commands:
  */
@@ -26,6 +30,7 @@ int lsh_exit(char **args);
 int setshellname(char **args);
 int setterminator(char **args);
 int newname(char **args);
+int listnewnames(char **args);
 /*
   List of builtin commands, followed by their corresponding functions.
  */
@@ -35,6 +40,8 @@ char *builtin_str[] = {
   "stop",
   "setshellname",
   "setterminator",
+  "newname",
+  "listnewnames",
 };
 
 int (*builtin_func[]) (char **) = {
@@ -43,6 +50,8 @@ int (*builtin_func[]) (char **) = {
   &lsh_exit,
   &setshellname,
   &setterminator,
+  &newname,
+  &listnewnames,
 };
 
 int lsh_num_builtins() {
@@ -130,6 +139,44 @@ int setterminator(char **args)
   return 1;
 }
 
+/*
+ @
+*/
+
+int newname(char **args)
+{
+  if(args[1] == NULL || args[2] == NULL)
+     {
+       fprintf(stderr, "lsh: expected argument to \"newname\"\n");
+     }
+  else
+     {
+     	int i = 0;
+        
+	while(i < numofnewnames && oldnames[i] != args[2])
+        {
+          i++;
+        }
+        if(oldnames[i] == args[2])
+          {
+            newnames[i] = args[1];
+          }
+        else
+          {
+            oldnames[numofnewnames] = args[2];
+            newnames[numofnewnames] = args[1];
+            numofnewnames = numofnewnames + 1;  
+          }
+     }
+
+}
+
+int listnewnames(char **args)
+{
+  
+
+}
+
 /**
   @brief Launch a program and wait for it to terminate.
   @param args Null terminated list of arguments (including program).
@@ -180,6 +227,13 @@ int lsh_execute(char **args)
     }
   }
 
+for(i = 0; i < numofnewnames; i++)
+   {
+     if(strcmp(args[0], newnames[i]) == 0)
+       {
+         args[0] = oldnames[i];
+      }   
+}
   return lsh_launch(args);
 }
 
