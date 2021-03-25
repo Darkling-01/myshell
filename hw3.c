@@ -16,10 +16,11 @@
 char *shellname = "myshell";
 char *terminator = ">";
 
+
+int numofnewnames = 0;
 char *newnames[10];
 char *oldnames[10];
-int numofnewnames;
-char *listnames[10];
+
 /*
   Function Declarations for builtin shell commands:
  */
@@ -27,10 +28,13 @@ int lsh_cd(char **args);
 int lsh_help(char **args);
 int lsh_exit(char **args);
 
-int setshellname(char **args);
-int setterminator(char **args);
+int setShellName(char **args);
+int setTerminator(char **args);
 int newname(char **args);
-int listnewnames(char **args);
+int listNewNames(char **args);
+int saveNewNames(char **args);
+int readNewNames(char **args);
+
 /*
   List of builtin commands, followed by their corresponding functions.
  */
@@ -42,16 +46,20 @@ char *builtin_str[] = {
   "setterminator",
   "newname",
   "listnewnames",
+  "savenewnames",
+  "readnewnames"
 };
 
 int (*builtin_func[]) (char **) = {
   &lsh_cd,
   &lsh_help,
   &lsh_exit,
-  &setshellname,
-  &setterminator,
+  &setShellName,
+  &setTerminator,
   &newname,
-  &listnewnames,
+  &listNewNames,
+  &saveNewNames,
+  &readNewNames
 };
 
 int lsh_num_builtins() {
@@ -114,7 +122,7 @@ int lsh_exit(char **args)
  @If no shell name is defined then myshell is default
  */
 
-int setshellname(char **args)
+int setShellName(char **args)
 {
   if (args[1] == NULL)
      shellname = "myshell";
@@ -129,7 +137,7 @@ int setshellname(char **args)
  @Accpets the change to a new terminator.
  @If set terminator is blank then a defualt terminator will be return.  
 */
-int setterminator(char **args)
+int setTerminator(char **args)
 {
   if(args[1] == NULL)
      terminator = ">";
@@ -140,40 +148,106 @@ int setterminator(char **args)
 }
 
 /*
- @
+ @ Creates a new name for a built in function
 */
 
 int newname(char **args)
 {
+ 
   if(args[1] == NULL || args[2] == NULL)
      {
        fprintf(stderr, "lsh: expected argument to \"newname\"\n");
-     }
+      
+    }
   else
      {
-     	int i = 0;
-        
+     	int i = 0; 
 	while(i < numofnewnames && oldnames[i] != args[2])
         {
           i++;
         }
+
         if(oldnames[i] == args[2])
           {
-            newnames[i] = args[1];
+           
+           newnames[i] = args[1];
           }
         else
           {
-            oldnames[numofnewnames] = args[2];
-            newnames[numofnewnames] = args[1];
-            numofnewnames = numofnewnames + 1;  
+           oldnames[numofnewnames] = args[2];
+           newnames[numofnewnames] = args[1];
+           numofnewnames++;  
           }
      }
-
+    return 1; 
 }
 
-int listnewnames(char **args)
+/*
+  @The listnewnames function outputs all aliases that have been defined.
+*/
+int listNewNames(char **args)
 {
-  
+  int i = 0;
+  printf("NEW NAMES:\n");
+  for(i; i < numofnewnames; i++)
+     {
+       printf("%s  %s\n", newnames[i], oldnames[i]);
+     }
+  return 1;
+}
+
+/*
+  @writes new names from file
+*/
+int saveNewNames(char **args)
+{
+  if(args[1] == NULL)
+    {
+      printf("Error: Not a valid argument\n");
+    }
+  else
+    {
+      FILE *file;
+      file = fopen(args[1], "w");
+      for(int i = 0; i < numofnewnames; i++)
+         {
+           fprintf(file, "%s  %s\n", newnames[i], oldnames[i]);
+         }
+         fclose(file);
+          return 1;
+    }
+}
+
+/*
+  @Reads new names from file
+*/
+
+int readNewNames(char **args)
+{
+  char character;  
+
+  if(args[1] == NULL)
+    {
+      printf("Error: Not a valid argument\n");
+    }
+  else
+    {
+      FILE *file;
+      file = fopen(args[1], "r");
+      if(file == NULL)
+        {
+          printf("Invalid file\n");
+          return 1;
+        }
+      character = fgetc(file);
+      while(character != EOF)
+        {
+          printf("%c", character);
+          character = fgetc(file);
+        }
+      fclose(file);
+    }
+    return 1;
 
 }
 
@@ -220,6 +294,13 @@ int lsh_execute(char **args)
     // An empty command was entered.
     return 1;
   }
+ for(i = 0; i < numofnewnames; i++)
+    {
+      if(strcmp(args[0], newnames[i]) == 0)
+        {
+          args[0] = oldnames[i];
+        }
+    }
 
  for (i = 0; i < lsh_num_builtins(); i++) {
 	  if (strcmp(args[0], builtin_str[i]) == 0) {
@@ -227,13 +308,6 @@ int lsh_execute(char **args)
     }
   }
 
-for(i = 0; i < numofnewnames; i++)
-   {
-     if(strcmp(args[0], newnames[i]) == 0)
-       {
-         args[0] = oldnames[i];
-      }   
-}
   return lsh_launch(args);
 }
 
