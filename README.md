@@ -1,5 +1,5 @@
 # myshell
-This was a class assignment for my Operating System course.
+This project was a class assignment for the Operating System course.
 
 In this assignment we were using Stephen Brennan code as a starting point, and we implemented our own commands.
 Reference:
